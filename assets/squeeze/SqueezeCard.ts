@@ -24,16 +24,29 @@ export class SqueezeCard extends Component {
         this.setupDragHandlers();
     }
 
-    private setupDragHandlers() {
-        this.dragHandlers.push(...this.dragHandlerComps);
-        this.dragHandlers.push(new SqueezeCardFrontCardTransform(this.frontCardNode));
-
-        const mask = this.node.addComponent(SqueezeCardMask);
-        this.dragHandlers.push(mask);
-    }
-
     onDestroy() {
         this.unregisterEvents();
+    }
+
+    private setupDragHandlers() {
+        this.setupMask();
+        this.dragHandlers.push(...this.dragHandlerComps);
+        this.dragHandlers.push(new SqueezeCardFrontCardTransform(this.frontCardNode));
+    }
+
+    private setupMask() {
+        const maskNode = new Node();
+        maskNode.parent = this.node;
+        maskNode.name = 'mask';
+        const mask = maskNode.addComponent(SqueezeCardMask);
+        this.dragHandlers.push(mask);
+
+        this.backCardNode.parent = maskNode;
+        this.frontCardNode.parent = maskNode;
+
+        const maskTransform = maskNode.getComponent(UITransform);
+        maskTransform.width = (this.backCardNode.getComponent(UITransform)?.width ?? 0) * 3;
+        maskTransform.height = (this.backCardNode.getComponent(UITransform)?.height ?? 0) * 3;
     }
 
     private registerEvents() {
