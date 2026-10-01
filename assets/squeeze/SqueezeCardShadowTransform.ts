@@ -1,20 +1,21 @@
 import { _decorator, Component, Node, UITransform, Vec3 } from "cc";
+import { DragHandler } from "./DragHandler";
 import { Vec2 } from "./vec-2";
 
 const { ccclass, property } = _decorator;
 
 @ccclass("SqueezeCardShadowTransform")
-export default class SqueezeCardShadowTransform extends Component {
+export default class SqueezeCardShadowTransform extends Component implements DragHandler {
     @property(Node) private shadowNode: Node = null;
     @property(Node) private backCardNode: Node = null;
 
-    updateTransform(startDraggingPos: Vec2, dragVector: Vec2) {
+    handleDrag(start: Vec2, dragVector: Vec2): void {
         const shadowAngle = Math.atan2(dragVector.x, dragVector.y);
         this.shadowNode.angle = -shadowAngle * (180 / Math.PI) - this.getWorldRotation();
 
         const foldPoint = {
-            x: startDraggingPos.x + dragVector.x / 2,
-            y: startDraggingPos.y + dragVector.y / 2,
+            x: start.x + dragVector.x / 2,
+            y: start.y + dragVector.y / 2,
         };
 
         const backTransform = this.backCardNode.getComponent(UITransform);

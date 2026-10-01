@@ -1,46 +1,18 @@
-import { _decorator, Component, EventHandler, Node, UITransform } from "cc";
-import { calculateIsDragging } from "./calculate-is-dragging";
-import CardSqueezeFrontCardTransform from "./card-squeeze-front-card-transform";
-import { CardSqueezeMask } from "./card-squeeze-mask";
-import SqueezeCardShadowTransform from "./squeeze-card-shadow-transform";
-import { calculateCosine, Vec2 } from "./vec-2";
-
-const { ccclass, property } = _decorator;
+import { Node, UITransform } from "cc";
+import { calculateIsDragging } from "./calculateIsDragging";
+import { Vec2, calculateCosine } from "./vec-2";
 
 const MIN_COSINE = Math.cos((45 * Math.PI) / 180);
 
-@ccclass("HandleSqueezeCardDrag")
-export class HandleSqueezeCardDrag extends Component {
-    @property(CardSqueezeMask) private squeezeMask: CardSqueezeMask = null;
-    @property(CardSqueezeFrontCardTransform) private frontCardMovement: CardSqueezeFrontCardTransform = null;
-    @property(SqueezeCardShadowTransform) private shadowMovement: SqueezeCardShadowTransform = null;
-    @property(Node) private backCardNode: Node = null;
-    @property({ type: EventHandler }) private onHitDeadzone: EventHandler = null;
+export class SqueezeCardDragCalculator {
+    constructor(private backCardNode: Node) { }
 
-    updateDrag(start: Vec2, end: Vec2) {
+    calculateSqueezeDrag(start: Vec2, end: Vec2): { start: Vec2; dragVector: Vec2; } {
         const dragVector = this.calculateDragVector(start, end);
         const adjustedDragVector = this.adjustDragVector(start, dragVector);
         const translatedDraggingStartPos = this.translateStartDraggingPosToCardEdge(start, adjustedDragVector);
 
-        this.squeezeMask.updateMask(translatedDraggingStartPos, adjustedDragVector);
-        this.frontCardMovement.updateTransform(translatedDraggingStartPos, adjustedDragVector);
-        this.shadowMovement?.updateTransform(translatedDraggingStartPos, adjustedDragVector);
-
-        const isHitDeadzone = this.isHitDeadzone(dragVector);
-        if (isHitDeadzone) {
-            this.handHitDeadzone();
-        }
-    }
-
-    private isHitDeadzone(dragVector: Vec2): boolean {
-        const backTransform = this.backCardNode.getComponent(UITransform);
-        const width = backTransform?.width ?? 0;
-        const height = backTransform?.height ?? 0;
-        const cardDiagonalLength = Math.hypot(width, height);
-        const maxDragVectorLength = cardDiagonalLength * 0.7;
-        const dragVectorLength = Math.hypot(dragVector.x, dragVector.y);
-
-        return dragVectorLength >= maxDragVectorLength;
+        return { start: translatedDraggingStartPos, dragVector: adjustedDragVector }
     }
 
     private adjustDragVector(startDragPosition: Vec2, dragVector: Vec2): Vec2 {
@@ -93,11 +65,5 @@ export class HandleSqueezeCardDrag extends Component {
             x: endPos.x - startPos.x,
             y: endPos.y - startPos.y,
         };
-    }
-
-    private handHitDeadzone() {
-        if (this.onHitDeadzone) {
-            this.onHitDeadzone.emit([]);
-        }
     }
 }

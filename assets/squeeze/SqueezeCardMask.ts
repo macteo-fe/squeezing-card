@@ -1,6 +1,7 @@
 import { _decorator, Graphics, Mask, UITransform } from "cc";
-import { Vec2, calculateCosine } from "./vec-2";
-import { calculateIsDragging } from "./calculate-is-dragging";
+import { calculateIsDragging } from "./calculateIsDragging";
+import { DragHandler } from "./DragHandler";
+import { calculateCosine, Vec2 } from "./vec-2";
 
 const { ccclass } = _decorator;
 
@@ -18,8 +19,8 @@ interface CornerPositions {
     rightBottom: Vec2;
 }
 
-@ccclass("CardSqueezeMask")
-export class CardSqueezeMask extends Mask {
+@ccclass("SqueezeCardMask")
+export class SqueezeCardMask extends Mask implements DragHandler {
     private startDragPos: Vec2 = { x: 0, y: 0 };
     private dragVector: Vec2 = { x: 0, y: 0 };
 
@@ -27,8 +28,8 @@ export class CardSqueezeMask extends Mask {
         this.type = Mask.Type.GRAPHICS_STENCIL;
     }
 
-    updateMask(startDragPos: Vec2, dragVector: Vec2): void {
-        this.startDragPos = startDragPos;
+    handleDrag(start: Vec2, dragVector: Vec2): void {
+        this.startDragPos = start;
         this.dragVector = dragVector;
 
         this._updateGraphics();
@@ -69,12 +70,13 @@ export class CardSqueezeMask extends Mask {
         let minAcceptedCosine = 0;
         const edgeCutPosition = this.calculateEdgeCutPositions(cutLinePoint, cutVector);
 
-        Object.values(edgeCutPosition).forEach((cutPos) => {
+        for (const edge in edgeCutPosition){
+            const cutPos = edgeCutPosition[edge];
             if (cutPos != null) {
                 const cosine = this.calculateDragAndToPointCosine(cutPos, cutLinePoint);
                 minAcceptedCosine = Math.min(minAcceptedCosine, cosine);
             }
-        });
+        }
 
         const mergedPos: Vec2[] = this.mergePositions(edgeCutPosition, cornerPositions);
 

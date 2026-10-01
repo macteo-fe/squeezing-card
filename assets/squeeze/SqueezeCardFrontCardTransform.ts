@@ -1,18 +1,16 @@
-import { _decorator, Component, Node, UIOpacity } from "cc";
+import { Node, UIOpacity } from "cc";
+import { DragHandler } from "./DragHandler";
+import { calculateIsDragging } from "./calculateIsDragging";
 import { Vec2 } from "./vec-2";
-import { calculateIsDragging } from "./calculate-is-dragging";
 
-const { ccclass, property } = _decorator;
-
-@ccclass("CardSqueezeFrontCardTransform")
-export default class CardSqueezeFrontCardTransform extends Component {
-    @property(Node) private frontCardNode: Node = null;
-
+export default class SqueezeCardFrontCardTransform implements DragHandler {
     private startDraggingPos: Vec2 = { x: 0, y: 0 };
     private dragVector: Vec2 = { x: 0, y: 0 };
 
-    updateTransform(startDraggingPos: Vec2, dragVector: Vec2) {
-        this.startDraggingPos = startDraggingPos;
+    constructor(private frontCardNode: Node) {}
+
+    handleDrag(start: Vec2, dragVector: Vec2): void {
+        this.startDraggingPos = start;
         this.dragVector = dragVector;
 
         this.updateAngle();

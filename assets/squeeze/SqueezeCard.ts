@@ -1,23 +1,49 @@
 import { _decorator, Component, EventTouch, Node, UITransform, Vec3 } from "cc";
-import { HandleSqueezeCardDrag } from "./handle-squeeze-card-drag";
+import { DragHandler, DragHandlerComponent } from "./DragHandler";
+import { SqueezeCardDragCalculator } from "./SqueezeCardDragCalculator";
+import SqueezeCardFrontCardTransform from "./SqueezeCardFrontCardTransform";
+import { SqueezeCardMask } from "./SqueezeCardMask";
 import { Vec2 } from "./vec-2";
 
 const { ccclass, property } = _decorator;
 
-@ccclass("CardSqueezeDragDrop")
-export class CardSqueezeDragDrop extends Component {
-    @property(HandleSqueezeCardDrag) private handleSqueezeCardDrag: HandleSqueezeCardDrag = null;
+@ccclass("SqueezeCard")
+export class SqueezeCard extends Component {
     @property(Node) private backCardNode: Node = null;
+    @property(Node) private frontCardNode: Node = null;
+    @property({ type: [DragHandlerComponent] }) private dragHandlerComps: DragHandlerComponent[] = [];
+
+    private dragHandlers: DragHandler[] = [];
+    private dragCalculator: SqueezeCardDragCalculator;
+
     private startPos: Vec2 = { x: 0, y: 0 };
 
     onLoad() {
+        this.dragCalculator = new SqueezeCardDragCalculator(this.backCardNode);
+        this.registerEvents();
+        this.setupDragHandlers();
+    }
+
+    private setupDragHandlers() {
+        this.dragHandlers.push(...this.dragHandlerComps);
+        this.dragHandlers.push(new SqueezeCardFrontCardTransform(this.frontCardNode));
+
+        const mask = this.node.addComponent(SqueezeCardMask);
+        this.dragHandlers.push(mask);
+    }
+
+    onDestroy() {
+        this.unregisterEvents();
+    }
+
+    private registerEvents() {
         this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
         this.node.on(Node.EventType.TOUCH_MOVE, this.onTouchMove, this);
         this.node.on(Node.EventType.TOUCH_END, this.onTouchEnd, this);
         this.node.on(Node.EventType.TOUCH_CANCEL, this.onTouchEnd, this);
     }
 
-    onDestroy() {
+    private unregisterEvents() {
         this.node.off(Node.EventType.TOUCH_START, this.onTouchStart, this);
         this.node.off(Node.EventType.TOUCH_MOVE, this.onTouchMove, this);
         this.node.off(Node.EventType.TOUCH_END, this.onTouchEnd, this);
@@ -73,6 +99,9 @@ export class CardSqueezeDragDrop extends Component {
     }
 
     private updateDrag(start: Vec2, end: Vec2) {
-        this.handleSqueezeCardDrag.updateDrag(start, end);
+        const dragData = this.dragCalculator.calculateSqueezeDrag(start, end);
+        for (const dragHandler of this.dragHandlers) {
+            dragHandler.handleDrag(dragData.start, dragData.dragVector);
+        }
     }
 }
